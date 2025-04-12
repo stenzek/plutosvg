@@ -6,10 +6,32 @@ set(PLUTOSVG_VERSION_MICRO 6)
 
 project(plutosvg LANGUAGES C VERSION ${PLUTOSVG_VERSION_MAJOR}.${PLUTOSVG_VERSION_MINOR}.${PLUTOSVG_VERSION_MICRO})
 
-find_package(plutovg 1.0.0 QUIET)
-if(NOT plutovg_FOUND)
-    add_subdirectory(plutovg)
-endif()
+set(plutovg_sources
+    plutovg/source/plutovg-blend.c
+    plutovg/source/plutovg-canvas.c
+    plutovg/source/plutovg-font.c
+    plutovg/source/plutovg-matrix.c
+    plutovg/source/plutovg-paint.c
+    plutovg/source/plutovg-path.c
+    plutovg/source/plutovg-rasterize.c
+    plutovg/source/plutovg-surface.c
+    plutovg/source/plutovg-ft-math.c
+    plutovg/source/plutovg-ft-raster.c
+    plutovg/source/plutovg-ft-stroker.c
+)
+
+set(plutovg_headers
+    plutovg/include/plutovg.h
+    plutovg/source/plutovg-private.h
+    plutovg/source/plutovg-utils.h
+    plutovg/source/plutovg-ft-math.h
+    plutovg/source/plutovg-ft-raster.h
+    plutovg/source/plutovg-ft-stroker.h
+    plutovg/source/plutovg-ft-types.h
+    plutovg/source/plutovg-stb-image-write.h
+    plutovg/source/plutovg-stb-image.h
+    plutovg/source/plutovg-stb-truetype.h
+)
 
 set(plutosvg_sources
     source/plutosvg.h
@@ -17,7 +39,7 @@ set(plutosvg_sources
     source/plutosvg.c
 )
 
-add_library(plutosvg ${plutosvg_sources})
+add_library(plutosvg ${plutosvg_sources} ${plutovg_sources} ${plutovg_headers})
 add_library(plutosvg::plutosvg ALIAS plutosvg)
 
 set_target_properties(plutosvg PROPERTIES
@@ -29,6 +51,8 @@ set_target_properties(plutosvg PROPERTIES
 
 target_include_directories(plutosvg PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/source
+    ${CMAKE_CURRENT_SOURCE_DIR}/plutovg/source
+    ${CMAKE_CURRENT_SOURCE_DIR}/plutovg/include
 )
 
 target_include_directories(plutosvg PUBLIC
@@ -36,14 +60,12 @@ target_include_directories(plutosvg PUBLIC
     $<INSTALL_INTERFACE:include/plutosvg>
 )
 
-target_link_libraries(plutosvg PUBLIC plutovg::plutovg)
-
 find_library(MATH_LIBRARY m)
 if(MATH_LIBRARY)
     target_link_libraries(plutosvg PUBLIC ${MATH_LIBRARY})
 endif()
 
-target_compile_definitions(plutosvg PRIVATE PLUTOSVG_BUILD)
+target_compile_definitions(plutosvg PRIVATE PLUTOSVG_BUILD PLUTOVG_BUILD)
 if(NOT BUILD_SHARED_LIBS)
     target_compile_definitions(plutosvg PUBLIC PLUTOSVG_BUILD_STATIC)
 endif()
@@ -71,6 +93,7 @@ include(GNUInstallDirs)
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/source/plutosvg.h
     ${CMAKE_CURRENT_SOURCE_DIR}/source/plutosvg-ft.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/plutovg/include/plutovg.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/plutosvg
 )
 
@@ -98,7 +121,7 @@ export(EXPORT plutosvgTargets
     NAMESPACE plutosvg::
 )
 
-option(PLUTOSVG_BUILD_EXAMPLES "Build examples" ON)
+option(PLUTOSVG_BUILD_EXAMPLES "Build examples" OFF)
 if(PLUTOSVG_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
