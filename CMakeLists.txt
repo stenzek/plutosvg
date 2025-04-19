@@ -52,11 +52,11 @@ set_target_properties(plutosvg PROPERTIES
 target_include_directories(plutosvg PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/source
     ${CMAKE_CURRENT_SOURCE_DIR}/plutovg/source
-    ${CMAKE_CURRENT_SOURCE_DIR}/plutovg/include
 )
 
 target_include_directories(plutosvg PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/plutovg/include>
     $<INSTALL_INTERFACE:include/plutosvg>
 )
 
@@ -74,7 +74,7 @@ option(PLUTOSVG_ENABLE_FREETYPE "Enable Freetype integration" OFF)
 if(PLUTOSVG_ENABLE_FREETYPE)
     find_package(Freetype 2.12 REQUIRED)
     target_compile_definitions(plutosvg PUBLIC PLUTOSVG_HAS_FREETYPE)
-    target_link_libraries(plutosvg PUBLIC Freetype::Freetype)
+    target_link_libraries(plutosvg PRIVATE Freetype::Freetype)
 endif()
 
 include(CMakePackageConfigHelpers)
