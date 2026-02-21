@@ -62,7 +62,7 @@ target_include_directories(plutosvg PUBLIC
 
 find_library(MATH_LIBRARY m)
 if(MATH_LIBRARY)
-    target_link_libraries(plutosvg PUBLIC ${MATH_LIBRARY})
+    target_link_libraries(plutosvg PRIVATE ${MATH_LIBRARY})
 endif()
 
 target_compile_definitions(plutosvg PRIVATE PLUTOSVG_BUILD PLUTOVG_BUILD)
