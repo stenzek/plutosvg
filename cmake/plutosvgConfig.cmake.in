@@ -1,5 +1,8 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
+if(@PLUTOSVG_ENABLE_FREETYPE@)
+    find_dependency(Freetype)
+endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/plutosvgTargets.cmake")

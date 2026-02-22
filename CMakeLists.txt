@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 set(PLUTOSVG_VERSION_MAJOR 0)
 set(PLUTOSVG_VERSION_MINOR 0)
-set(PLUTOSVG_VERSION_MICRO 6)
+set(PLUTOSVG_VERSION_MICRO 7)
 
 project(plutosvg LANGUAGES C VERSION ${PLUTOSVG_VERSION_MAJOR}.${PLUTOSVG_VERSION_MINOR}.${PLUTOSVG_VERSION_MICRO})
 
@@ -42,6 +42,9 @@ set(plutosvg_sources
 add_library(plutosvg ${plutosvg_sources} ${plutovg_sources} ${plutovg_headers})
 add_library(plutosvg::plutosvg ALIAS plutosvg)
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 set_target_properties(plutosvg PROPERTIES
     SOVERSION ${PLUTOSVG_VERSION_MAJOR}
     C_VISIBILITY_PRESET hidden
@@ -57,12 +60,12 @@ target_include_directories(plutosvg PRIVATE
 target_include_directories(plutosvg PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/plutovg/include>
-    $<INSTALL_INTERFACE:include/plutosvg>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/plutosvg>
 )
 
 find_library(MATH_LIBRARY m)
 if(MATH_LIBRARY)
-    target_link_libraries(plutosvg PRIVATE ${MATH_LIBRARY})
+    target_link_libraries(plutosvg PRIVATE m)
 endif()
 
 target_compile_definitions(plutosvg PRIVATE PLUTOSVG_BUILD PLUTOVG_BUILD)
@@ -77,7 +80,6 @@ if(PLUTOSVG_ENABLE_FREETYPE)
     target_link_libraries(plutosvg PRIVATE Freetype::Freetype)
 endif()
 
-include(CMakePackageConfigHelpers)
 configure_package_config_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/plutosvgConfig.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/plutosvgConfig.cmake"
@@ -89,7 +91,6 @@ write_basic_package_version_file(plutosvgConfigVersion.cmake
     COMPATIBILITY SameMajorVersion
 )
 
-include(GNUInstallDirs)
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/source/plutosvg.h
     ${CMAKE_CURRENT_SOURCE_DIR}/source/plutosvg-ft.h
@@ -119,6 +120,49 @@ install(FILES
 export(EXPORT plutosvgTargets
     FILE ${CMAKE_CURRENT_BINARY_DIR}/plutosvgTargets.cmake
     NAMESPACE plutosvg::
+)
+
+file(RELATIVE_PATH plutosvg_pc_prefix_relative
+    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+    "${CMAKE_INSTALL_PREFIX}"
+)
+
+set(plutosvg_pc_cflags "")
+set(plutosvg_pc_libs_private "")
+set(plutosvg_pc_requires "")
+
+if(MATH_LIBRARY)
+    string(APPEND plutosvg_pc_libs_private " -lm")
+endif()
+
+if(NOT BUILD_SHARED_LIBS)
+    string(APPEND plutosvg_pc_cflags " -DPLUTOSVG_BUILD_STATIC")
+endif()
+
+if(PLUTOSVG_ENABLE_FREETYPE)
+    string(APPEND plutosvg_pc_cflags " -DPLUTOSVG_HAS_FREETYPE")
+    string(APPEND plutosvg_pc_requires " freetype2 >= 2.12")
+endif()
+
+string(CONFIGURE [[
+prefix=${pcfiledir}/@plutosvg_pc_prefix_relative@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+
+Name: PlutoSVG
+Description: Tiny SVG rendering library in C
+Version: @PROJECT_VERSION@
+
+Requires: plutovg@plutosvg_pc_requires@
+Cflags: -I${includedir}/plutosvg@plutosvg_pc_cflags@
+Libs: -L${libdir} -lplutosvg
+Libs.private:@plutosvg_pc_libs_private@
+]] plutosvg_pc @ONLY)
+
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/plutosvg.pc" "${plutosvg_pc}")
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/plutosvg.pc"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
 )
 
 option(PLUTOSVG_BUILD_EXAMPLES "Build examples" OFF)
